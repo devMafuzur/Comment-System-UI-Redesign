@@ -1,0 +1,682 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="https://static.readdy.ai/static/e.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comments Dashboard</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#64748b'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :where([class^="ri-"])::before {
+            content: "\f3c2";
+        }
+        
+        .comment-thread {
+            border-left: 2px solid #f1f5f9;
+            margin-left: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .comment-item:hover {
+            background-color: #f8fafc;
+        }
+        
+        .notification-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #2563eb;
+            border-radius: 50%;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-approved { background-color: #10b981; }
+        .status-pending { background-color: #f59e0b; }
+        .status-rejected { background-color: #ef4444; }
+        
+        .custom-toggle {
+            width: 44px;
+            height: 24px;
+            background-color: #e2e8f0;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .custom-toggle.active {
+            background-color: #2563eb;
+        }
+        
+        .custom-toggle::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .custom-toggle.active::after {
+            transform: translateX(20px);
+        }
+        
+        .custom-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+            background-color: white;
+        }
+        
+        .custom-checkbox.checked {
+            background-color: #2563eb;
+            border-color: #2563eb;
+        }
+        
+        .custom-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            position: absolute;
+            top: -1px;
+            left: 2px;
+        }
+        
+        .sidebar-nav {
+            position: fixed;
+            left: 0;
+            top: 4rem;
+            width: 16rem;
+            height: calc(100vh - 4rem);
+            background-color: white;
+            border-right: 1px solid #e2e8f0;
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            margin-left: 16rem;
+            min-height: calc(100vh - 4rem);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <header class="bg-white border-b border-gray-200 h-16 fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center justify-between h-full px-6">
+            <div class="flex items-center space-x-8">
+                <div class="text-xl font-semibold text-gray-900">CommentsHub</div>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#" class="text-gray-600 hover:text-gray-900 text-sm font-medium">Dashboard</a>
+                    <a href="#" class="text-primary text-sm font-medium">Comments</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900 text-sm font-medium">Settings</a>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="relative w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900">
+                    <i class="ri-notification-line ri-lg"></i>
+                    <div class="notification-dot absolute top-1 right-1"></div>
+                </button>
+                <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    <i class="ri-user-line text-gray-600"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <aside class="sidebar-nav pt-6">
+        <nav class="px-4 space-y-2">
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-primary bg-blue-50 rounded-lg">
+                <i class="ri-chat-3-line w-5 h-5 flex items-center justify-center mr-3"></i>
+                All Comments
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
+                <i class="ri-time-line w-5 h-5 flex items-center justify-center mr-3"></i>
+                Pending Review
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
+                <i class="ri-check-line w-5 h-5 flex items-center justify-center mr-3"></i>
+                Approved
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
+                <i class="ri-close-line w-5 h-5 flex items-center justify-center mr-3"></i>
+                Rejected
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
+                <i class="ri-spam-line w-5 h-5 flex items-center justify-center mr-3"></i>
+                Spam
+            </a>
+            <div class="pt-4 border-t border-gray-200 mt-4">
+                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
+                    <i class="ri-settings-line w-5 h-5 flex items-center justify-center mr-3"></i>
+                    Settings
+                </a>
+                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
+                    <i class="ri-user-line w-5 h-5 flex items-center justify-center mr-3"></i>
+                    Profile
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="p-8">
+            <div class="mb-8">
+                <h1 class="text-2xl font-semibold text-gray-900 mb-2">Comment Management</h1>
+                <p class="text-gray-600">Manage and moderate comments across your platform</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="relative">
+                                <input type="text" placeholder="Search comments..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-80">
+                                <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                            <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary pr-8">
+                                <option>All Status</option>
+                                <option>Pending</option>
+                                <option>Approved</option>
+                                <option>Rejected</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-button hover:bg-gray-50 whitespace-nowrap">
+                                <i class="ri-download-line w-4 h-4 flex items-center justify-center mr-2 inline-block"></i>
+                                Export
+                            </button>
+                            <button class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-button hover:bg-blue-700 whitespace-nowrap">
+                                <i class="ri-settings-line w-4 h-4 flex items-center justify-center mr-2 inline-block"></i>
+                                Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left">
+                                    <div class="custom-checkbox" data-select-all></div>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Post</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr class="comment-item">
+                                <td class="px-6 py-4">
+                                    <div class="custom-checkbox" data-comment-select></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                                            <span class="text-xs font-medium text-gray-600">SM</span>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Sarah Mitchell</div>
+                                            <div class="text-sm text-gray-500">sarah@example.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900 max-w-xs truncate">This is an excellent article! I really appreciate the detailed analysis and practical examples provided.</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">Getting Started with React</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="status-dot status-approved mr-2"></div>
+                                        <span class="text-sm text-gray-900">Approved</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">2 hours ago</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-2">
+                                        <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                                            <i class="ri-eye-line"></i>
+                                        </button>
+                                        <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                                            <i class="ri-edit-line"></i>
+                                        </button>
+                                        <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="comment-item">
+                                <td class="px-6 py-4">
+                                    <div class="custom-checkbox" data-comment-select></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                                            <span class="text-xs font-medium text-gray-600">JD</span>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">James Davis</div>
+                                            <div class="text-sm text-gray-500">james.davis@company.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900 max-w-xs truncate">I disagree with some points here. The approach seems overly complicated for beginners.</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">Advanced JavaScript Patterns</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="status-dot status-pending mr-2"></div>
+                                        <span class="text-sm text-gray-900">Pending</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">4 hours ago</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-2">
+                                        <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                                            <i class="ri-eye-line"></i>
+                                        </button>
+                                        <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-green-600">
+                                            <i class="ri-check-line"></i>
+                                        </button>
+                                        <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600">
+                                            <i class="ri-close-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="comment-item">
+                                <td class="px-6 py-4">
+                                    <div class="custom-checkbox" data-comment-select></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                                            <span class="text-xs font-medium text-gray-600">EW</span>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Emily Wilson</div>
+                                            <div class="text-sm text-gray-500">emily.wilson@email.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900 max-w-xs truncate">Great tutorial! Could you add more examples about error handling in async functions?</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">Async Programming Guide</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="status-dot status-approved mr-2"></div>
+                                        <span class="text-sm text-gray-900">Approved</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">1 day ago</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-2">
+                                        <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                                            <i class="ri-eye-line"></i>
+                                        </button>
+                                        <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                                            <i class="ri-reply-line"></i>
+                                        </button>
+                                        <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                    <div class="text-sm text-gray-500">
+                        Showing 1 to 3 of 247 comments
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50" disabled>
+                            Previous
+                        </button>
+                        <button class="px-3 py-1 text-sm bg-primary text-white rounded">1</button>
+                        <button class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">2</button>
+                        <button class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">3</button>
+                        <button class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">Comment Thread</h2>
+                        <p class="text-sm text-gray-600 mt-1">View and manage comment conversations</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-6">
+                            <div class="flex space-x-4">
+                                <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-sm font-medium text-gray-600">AM</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="text-sm font-medium text-gray-900">Alex Morgan</span>
+                                        <span class="text-xs text-gray-500">3 hours ago</span>
+                                    </div>
+                                    <p class="text-sm text-gray-700 mb-3">This is a really insightful article. I particularly liked the section about performance optimization. Have you considered covering more advanced topics in future posts?</p>
+                                    <div class="flex items-center space-x-4">
+                                        <button class="text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                                            <i class="ri-thumb-up-line w-4 h-4 flex items-center justify-center mr-1"></i>
+                                            12
+                                        </button>
+                                        <button class="text-xs text-gray-500 hover:text-gray-700">Reply</button>
+                                        <button class="text-xs text-gray-500 hover:text-gray-700">Report</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="comment-thread">
+                                <div class="flex space-x-4">
+                                    <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-xs font-medium text-gray-600">JA</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <span class="text-sm font-medium text-gray-900">John Author</span>
+                                            <span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Author</span>
+                                            <span class="text-xs text-gray-500">2 hours ago</span>
+                                        </div>
+                                        <p class="text-sm text-gray-700 mb-3">Thanks for the feedback! I'm definitely planning to cover more advanced topics. What specific areas would you like to see covered?</p>
+                                        <div class="flex items-center space-x-4">
+                                            <button class="text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                                                <i class="ri-thumb-up-line w-4 h-4 flex items-center justify-center mr-1"></i>
+                                                5
+                                            </button>
+                                            <button class="text-xs text-gray-500 hover:text-gray-700">Reply</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="comment-thread mt-4">
+                                    <div class="flex space-x-4">
+                                        <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <span class="text-xs font-medium text-gray-600">AM</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <span class="text-sm font-medium text-gray-900">Alex Morgan</span>
+                                                <span class="text-xs text-gray-500">1 hour ago</span>
+                                            </div>
+                                            <p class="text-sm text-gray-700 mb-3">I'd love to see more about state management patterns and testing strategies!</p>
+                                            <div class="flex items-center space-x-4">
+                                                <button class="text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                                                    <i class="ri-thumb-up-line w-4 h-4 flex items-center justify-center mr-1"></i>
+                                                    3
+                                                </button>
+                                                <button class="text-xs text-gray-500 hover:text-gray-700">Reply</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <div class="flex space-x-4">
+                                <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-xs font-medium text-gray-600">YU</span>
+                                </div>
+                                <div class="flex-1">
+                                    <textarea placeholder="Write a reply..." class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none" rows="3"></textarea>
+                                    <div class="flex items-center justify-between mt-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                                                <i class="ri-bold"></i>
+                                            </button>
+                                            <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                                                <i class="ri-italic"></i>
+                                            </button>
+                                            <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                                                <i class="ri-link"></i>
+                                            </button>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 whitespace-nowrap">Cancel</button>
+                                            <button class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-button hover:bg-blue-700 whitespace-nowrap">Reply</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">Comment Settings</h2>
+                        <p class="text-sm text-gray-600 mt-1">Configure comment moderation and display options</p>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div class="space-y-4">
+                            <h3 class="text-sm font-medium text-gray-900">Moderation</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-900">Require approval for new comments</div>
+                                        <div class="text-xs text-gray-500">All new comments must be approved before appearing</div>
+                                    </div>
+                                    <div class="custom-toggle active" data-toggle></div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-900">Auto-approve trusted users</div>
+                                        <div class="text-xs text-gray-500">Users with approved comments skip moderation</div>
+                                    </div>
+                                    <div class="custom-toggle" data-toggle></div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-900">Enable spam detection</div>
+                                        <div class="text-xs text-gray-500">Automatically flag potential spam comments</div>
+                                    </div>
+                                    <div class="custom-toggle active" data-toggle></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 pt-6 border-t border-gray-200">
+                            <h3 class="text-sm font-medium text-gray-900">Display Options</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-900">Show comment count</div>
+                                        <div class="text-xs text-gray-500">Display total number of comments</div>
+                                    </div>
+                                    <div class="custom-toggle active" data-toggle></div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-900">Enable threaded replies</div>
+                                        <div class="text-xs text-gray-500">Allow nested comment conversations</div>
+                                    </div>
+                                    <div class="custom-toggle active" data-toggle></div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-900">Show timestamps</div>
+                                        <div class="text-xs text-gray-500">Display when comments were posted</div>
+                                    </div>
+                                    <div class="custom-toggle active" data-toggle></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 pt-6 border-t border-gray-200">
+                            <h3 class="text-sm font-medium text-gray-900">Notifications</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-900">Email notifications</div>
+                                        <div class="text-xs text-gray-500">Get notified of new comments via email</div>
+                                    </div>
+                                    <div class="custom-toggle" data-toggle></div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-900">Mention notifications</div>
+                                        <div class="text-xs text-gray-500">Get notified when mentioned in comments</div>
+                                    </div>
+                                    <div class="custom-toggle active" data-toggle></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-6 border-t border-gray-200">
+                            <button class="w-full px-4 py-2 text-sm font-medium text-white bg-primary rounded-button hover:bg-blue-700 whitespace-nowrap">
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script id="toggle-functionality">
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggles = document.querySelectorAll('[data-toggle]');
+            
+            toggles.forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                });
+            });
+        });
+    </script>
+
+    <script id="checkbox-functionality">
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllCheckbox = document.querySelector('[data-select-all]');
+            const commentCheckboxes = document.querySelectorAll('[data-comment-select]');
+            
+            function toggleCheckbox(checkbox) {
+                checkbox.classList.toggle('checked');
+            }
+            
+            selectAllCheckbox.addEventListener('click', function() {
+                const isChecked = this.classList.contains('checked');
+                
+                if (isChecked) {
+                    this.classList.remove('checked');
+                    commentCheckboxes.forEach(cb => cb.classList.remove('checked'));
+                } else {
+                    this.classList.add('checked');
+                    commentCheckboxes.forEach(cb => cb.classList.add('checked'));
+                }
+            });
+            
+            commentCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('click', function() {
+                    toggleCheckbox(this);
+                    
+                    const checkedCount = document.querySelectorAll('[data-comment-select].checked').length;
+                    const totalCount = commentCheckboxes.length;
+                    
+                    if (checkedCount === totalCount) {
+                        selectAllCheckbox.classList.add('checked');
+                    } else {
+                        selectAllCheckbox.classList.remove('checked');
+                    }
+                });
+            });
+        });
+    </script>
+
+    <script id="navigation-functionality">
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('aside nav a');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    navLinks.forEach(l => {
+                        l.classList.remove('text-primary', 'bg-blue-50');
+                        l.classList.add('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
+                    });
+                    
+                    this.classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
+                    this.classList.add('text-primary', 'bg-blue-50');
+                });
+            });
+        });
+    </script>
+<script>
+    !function (t, e) { var o, n, p, r; e.__SV || (window.posthog = e, e._i = [], e.init = function (i, s, a) { function g(t, e) { var o = e.split("."); 2 == o.length && (t = t[o[0]], e = o[1]), t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))) } } (p = t.createElement("script")).type = "text/javascript", p.crossOrigin = "anonymous", p.async = !0, p.src = s.api_host.replace(".i.posthog.com", "-assets.i.posthog.com") + "/static/array.js", (r = t.getElementsByTagName("script")[0]).parentNode.insertBefore(p, r); var u = e; for (void 0 !== a ? u = e[a] = [] : a = "posthog", u.people = u.people || [], u.toString = function (t) { var e = "posthog"; return "posthog" !== a && (e += "." + a), t || (e += " (stub)"), e }, u.people.toString = function () { return u.toString(1) + ".people (stub)" }, o = "init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "), n = 0; n < o.length; n++)g(u, o[n]); e._i.push([i, s, a]) }, e.__SV = 1) }(document, window.posthog || []);
+    posthog.init('phc_t9tkQZJiyi2ps9zUYm8TDsL6qXo4YmZx0Ot5rBlAlEd', {
+        api_host: 'https://us.i.posthog.com',
+        autocapture: false,
+        capture_pageview: false,
+        capture_pageleave: false,
+        capture_performance: {
+            web_vitals: false,
+        },
+        rageclick: false,
+    })
+    window.shareKey = 'xZ3xBqjsdHih52tZkmCcHg';
+    window.host = 'readdy.ai';
+</script>
+</body>
+</html>
